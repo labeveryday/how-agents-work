@@ -1112,7 +1112,11 @@ function updateChrome() {
   updateProgress();
   syncArchitecture();
   if (chapter) {
-    window.history.replaceState(null, '', '#ch=' + chapter.id + '&step=' + idx);
+    /* Keep the bare URL bare until the reader actually moves. */
+    const atStart = chapter.id === 'ch1' && idx === 0;
+    window.history.replaceState(null, '', atStart
+      ? window.location.pathname
+      : '#ch=' + chapter.id + '&step=' + idx);
   }
 }
 
@@ -1454,13 +1458,15 @@ async function init() {
     }
   });
 
+  /* The hash is user input. An unknown chapter would throw out of init. */
   const cm = window.location.hash.match(/ch=([a-z0-9]+)/i);
   const sm = window.location.hash.match(/step=(\d+)/);
+  const wanted = cm && CHAPTERS.some((c) => c.id === cm[1]) ? cm[1] : 'ch1';
   window.addEventListener('resize', fitCode);
 
   /* Preload every trace so chapter jumps and the progress bar are instant. */
   await Promise.all(CHAPTERS.filter((c) => c.id !== 'closing').map((c) => loadTrace(c.id)));
-  await loadChapter(cm ? cm[1] : 'ch1', sm ? parseInt(sm[1], 10) : 0);
+  await loadChapter(wanted, sm ? parseInt(sm[1], 10) : 0);
 }
 
 init();
