@@ -1,0 +1,54 @@
+{
+  "id": "ch2",
+  "title": "One tool call",
+  "code": "one_tool",
+  "world": {
+    "scene": "single_tool",
+    "status": "ready",
+    "input": null,
+    "result": null
+  },
+  "intro": "The model can return a tool call instead of text: the name of a function and its arguments. Your program runs that function once. It does not call the model again.",
+  "steps": [
+    {
+      "node": "think",
+      "author": "system",
+      "label": "System",
+      "text": "Use the weather tool.",
+      "codeLine": 15,
+      "narration": "The system message tells the model to use the weather tool. The tool schema, sent with the request, names get_weather and its city argument."
+    },
+    {
+      "node": "think",
+      "author": "user",
+      "label": "User",
+      "text": "Weather in Paris?",
+      "codeLine": 16,
+      "narration": "The user asks for weather in Paris. One chat.completions.create sends the messages and the tool schema together."
+    },
+    {
+      "node": "act",
+      "author": "model",
+      "label": "Tool call",
+      "text": "get_weather {\"city\": \"Paris\"}",
+      "codeLine": 21,
+      "set": {
+        "status": "requested",
+        "input": { "city": "Paris" }
+      },
+      "narration": "The model does not fetch weather. It returns a tool call: the name get_weather and the argument city=Paris. Your code has not run yet."
+    },
+    {
+      "node": "none",
+      "author": "tool",
+      "label": "Tool result",
+      "text": "{\"city\": \"Paris\", \"temp_c\": 18, \"sky\": \"rain\"}",
+      "codeLine": 23,
+      "set": {
+        "status": "done",
+        "result": { "city": "Paris", "temp_c": 18, "sky": "rain" }
+      },
+      "narration": "Your program runs get_weather(city=\"Paris\") and prints the dict it returned. There is no second model call, so the model never sees this result."
+    }
+  ]
+}

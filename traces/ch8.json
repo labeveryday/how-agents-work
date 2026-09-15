@@ -1,0 +1,127 @@
+{
+  "id": "ch8",
+  "title": "Multi-agent",
+  "code": "multi_agent",
+  "world": {
+    "scene": "multiagent",
+    "agents": [
+      { "name": "parent", "role": "one tool: delegate", "status": "ready" },
+      { "name": "researcher", "role": "own messages", "status": "idle" },
+      { "name": "coder", "role": "own messages", "status": "idle" }
+    ],
+    "events": []
+  },
+  "intro": "A second agent is a tool. delegate runs another run_agent with its own messages. The parent list only receives the string that tool returns.",
+  "steps": [
+    {
+      "node": "think",
+      "author": "system",
+      "label": "System",
+      "text": "Delegate research and coding. Then answer.",
+      "codeLine": 21,
+      "set": {
+        "agents": [
+          { "name": "parent", "role": "one tool: delegate", "status": "running" },
+          { "name": "researcher", "role": "own messages", "status": "idle" },
+          { "name": "coder", "role": "own messages", "status": "idle" }
+        ]
+      },
+      "narration": "The parent loop has one tool, delegate. Calling it starts a child agent."
+    },
+    {
+      "node": "think",
+      "author": "user",
+      "label": "User",
+      "text": "Compare Atlas and Beacon. Plan the switch.",
+      "codeLine": 25,
+      "narration": "The user wants a comparison and a plan. Those are two jobs, so the parent can call delegate twice."
+    },
+    {
+      "node": "act",
+      "author": "model",
+      "label": "Tool call",
+      "text": "delegate {\"name\": \"researcher\", \"task\": \"Compare Atlas and Beacon.\"}",
+      "codeLine": 15,
+      "set": {
+        "agents": [
+          { "name": "parent", "role": "one tool: delegate", "status": "waiting" },
+          { "name": "researcher", "role": "own messages", "status": "running" },
+          { "name": "coder", "role": "own messages", "status": "idle" }
+        ]
+      },
+      "add": {
+        "events": ["parent -> researcher: Compare Atlas and Beacon."]
+      },
+      "narration": "delegate starts researcher. That child has its own empty message list. The parent waits."
+    },
+    {
+      "node": "observe",
+      "author": "tool",
+      "label": "Tool result",
+      "text": "Beacon has the smaller API and supports the required region.",
+      "codeLine": 8,
+      "set": {
+        "agents": [
+          { "name": "parent", "role": "one tool: delegate", "status": "running" },
+          { "name": "researcher", "role": "own messages", "status": "done" },
+          { "name": "coder", "role": "own messages", "status": "idle" }
+        ]
+      },
+      "add": {
+        "events": ["researcher returned one conclusion"]
+      },
+      "narration": "The child loop finished. Only its return string is appended to the parent list. The child's messages stay private."
+    },
+    {
+      "node": "act",
+      "author": "model",
+      "label": "Tool call",
+      "text": "delegate {\"name\": \"coder\", \"task\": \"Plan the switch to Beacon.\"}",
+      "codeLine": 15,
+      "set": {
+        "agents": [
+          { "name": "parent", "role": "one tool: delegate", "status": "waiting" },
+          { "name": "researcher", "role": "own messages", "status": "done" },
+          { "name": "coder", "role": "own messages", "status": "running" }
+        ]
+      },
+      "add": {
+        "events": ["parent -> coder: Plan the switch to Beacon."]
+      },
+      "narration": "The parent calls delegate again, this time for coder. That child also starts with an empty list."
+    },
+    {
+      "node": "observe",
+      "author": "tool",
+      "label": "Tool result",
+      "text": "Pin beacon>=2.1 and remove atlas from requirements.",
+      "codeLine": 11,
+      "set": {
+        "agents": [
+          { "name": "parent", "role": "one tool: delegate", "status": "running" },
+          { "name": "researcher", "role": "own messages", "status": "done" },
+          { "name": "coder", "role": "own messages", "status": "done" }
+        ]
+      },
+      "add": {
+        "events": ["coder returned one change"]
+      },
+      "narration": "The coder's messages stay private. The parent list gets one more string."
+    },
+    {
+      "node": "think",
+      "author": "model",
+      "label": "Assistant",
+      "text": "Switch to Beacon. Pin beacon>=2.1 and drop Atlas.",
+      "codeLine": 24,
+      "set": {
+        "agents": [
+          { "name": "parent", "role": "one tool: delegate", "status": "done" },
+          { "name": "researcher", "role": "own messages", "status": "done" },
+          { "name": "coder", "role": "own messages", "status": "done" }
+        ]
+      },
+      "narration": "The parent answers from those two tool results. It never received the child message lists."
+    }
+  ]
+}

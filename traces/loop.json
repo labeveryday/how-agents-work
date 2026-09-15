@@ -1,0 +1,93 @@
+{
+  "id": "loop",
+  "title": "The agent loop",
+  "code": "agent_loop",
+  "world": {
+    "scene": "files",
+    "files": [
+      { "name": "app.py", "status": "" },
+      { "name": "test_app.py", "status": "" }
+    ],
+    "term": []
+  },
+  "intro": "An agent is that same model call, repeated. After your program runs a tool, it appends the result to messages and calls the model again. The loop stops when the model returns text instead of a tool call.",
+  "steps": [
+    {
+      "node": "think", "author": "system", "label": "System",
+      "text": "You are a coding agent. Tools: read_file, edit_file, run_command. Read files before answering about their contents.",
+      "codeLine": 13,
+      "narration": "The system message lists three tools the model may request: read_file, edit_file, and run_command."
+    },
+    {
+      "node": "think", "author": "user", "label": "User",
+      "text": "The test for add fails. Fix it.",
+      "codeLine": 14,
+      "narration": "The user says a test is failing. The files are not in the message list, so the model cannot see their contents yet."
+    },
+    {
+      "node": "act", "author": "model", "label": "Tool call",
+      "text": "read_file {\"path\": \"test_app.py\"}",
+      "codeLine": 20,
+      "set": { "files": [ { "name": "app.py", "status": "" }, { "name": "test_app.py", "status": "read" } ] },
+      "add": { "term": ["$ read_file test_app.py"] },
+      "narration": "The model returns a tool call for read_file on test_app.py. Your program will run that function."
+    },
+    {
+      "node": "observe", "author": "tool", "label": "Tool result",
+      "text": "def test_add():\n    assert add(2, 2) == 5",
+      "codeLine": 29,
+      "add": { "term": ["3 lines"] },
+      "narration": "Your program reads the file and appends the contents to messages. Then it calls the model again with the updated list."
+    },
+    {
+      "node": "act", "author": "model", "label": "Tool call",
+      "text": "read_file {\"path\": \"app.py\"}",
+      "codeLine": 20,
+      "set": { "files": [ { "name": "app.py", "status": "read" }, { "name": "test_app.py", "status": "read" } ] },
+      "add": { "term": ["$ read_file app.py"] },
+      "narration": "The model now has the test. It asks to read app.py."
+    },
+    {
+      "node": "observe", "author": "tool", "label": "Tool result",
+      "text": "def add(a, b):\n    return a + b",
+      "codeLine": 29,
+      "add": { "term": ["2 lines"] },
+      "narration": "add(2, 2) returns 4. The test asserts 5. That mismatch is now in the message list."
+    },
+    {
+      "node": "act", "author": "model", "label": "Tool call",
+      "text": "edit_file {\"path\": \"test_app.py\", \"old\": \"== 5\", \"new\": \"== 4\"}",
+      "codeLine": 20,
+      "add": { "term": ["$ edit_file test_app.py"] },
+      "narration": "The model asks edit_file to change the expected value from 5 to 4."
+    },
+    {
+      "node": "observe", "author": "tool", "label": "Tool result",
+      "text": "test_app.py updated",
+      "codeLine": 29,
+      "set": { "files": [ { "name": "app.py", "status": "read" }, { "name": "test_app.py", "status": "modified" } ] },
+      "add": { "term": ["test_app.py updated"] },
+      "narration": "The edit ran. Append that observation and call the model again."
+    },
+    {
+      "node": "act", "author": "model", "label": "Tool call",
+      "text": "run_command {\"command\": \"pytest -q\"}",
+      "codeLine": 20,
+      "add": { "term": ["$ pytest -q"] },
+      "narration": "The model asks to run pytest."
+    },
+    {
+      "node": "observe", "author": "tool", "label": "Tool result",
+      "text": "1 passed in 0.03s",
+      "codeLine": 29,
+      "add": { "term": [ { "t": "1 passed in 0.03s", "cls": "ok" } ] },
+      "narration": "pytest passed. Append that result and call the model again."
+    },
+    {
+      "node": "think", "author": "model", "label": "Assistant",
+      "text": "The implementation returns the correct sum. I changed the test to expect 4 from add(2, 2), and the test passes.",
+      "codeLine": 23,
+      "narration": "This reply has no tool_calls. The loop returns the text and stops."
+    }
+  ]
+}

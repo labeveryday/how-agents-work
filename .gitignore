@@ -216,3 +216,30 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- this project (public repo) ---
+# Secrets and generated local state. Never force-add these.
+.env
+.env.*
+!.env.example
+!**/.env.example
+memory.db
+*.db
+
+# Editor / OS
+.vscode/
+.DS_Store
+
+# Local QA: Playwright dumps, screenshots, node_modules
+.playwright-mcp/
+.verify/
+node_modules/
+
+# Private deploy runbook and AWS leftovers. No keys belong in git.
+deploy.sh
+deploy_notes.md
+deploy-state.json
+.aws/
+
+# Internal review notes
+GRANDMA_REVIEW.md

@@ -1,0 +1,94 @@
+{
+  "id": "ch7",
+  "title": "Memory between runs",
+  "code": "saved_memory",
+  "world": {
+    "scene": "memory",
+    "session": 1,
+    "records": [],
+    "query": null
+  },
+  "intro": "A new run starts with a new messages list. Anything only stored in the old list is gone. To keep a fact across runs, your program writes it outside the list, here to a SQLite file.",
+  "steps": [
+    {
+      "node": "think",
+      "author": "system",
+      "label": "System",
+      "text": "Use short snake_case keys, like editor. remember(key, value) and recall(key).",
+      "codeLine": 25,
+      "narration": "The system message names the key convention. Both runs see the same instruction, so remember and recall can use the same key."
+    },
+    {
+      "node": "think",
+      "author": "user",
+      "label": "User",
+      "text": "Remember that my editor is Helix.",
+      "codeLine": 29,
+      "narration": "The user asks to store a preference. That sentence lives only in this run's messages until a tool writes it out."
+    },
+    {
+      "node": "act",
+      "author": "model",
+      "label": "Tool call",
+      "text": "remember {\"key\": \"editor\", \"value\": \"Helix\"}",
+      "codeLine": 8,
+      "narration": "The model returns a remember tool call with key editor and value Helix. It cannot write the database itself."
+    },
+    {
+      "node": "observe",
+      "author": "tool",
+      "label": "Tool result",
+      "text": "Stored editor = Helix",
+      "codeLine": 10,
+      "add": {
+        "records": [
+          { "key": "editor", "value": "Helix" }
+        ]
+      },
+      "narration": "Your program writes the row to memory.db next to this script, then appends that result to this run's list."
+    },
+    {
+      "node": "think",
+      "author": "system",
+      "label": "New run",
+      "text": "This is a new message list. Use recall(key) with the same short snake_case keys, like editor.",
+      "codeLine": 30,
+      "collapse": true,
+      "set": { "session": 2, "query": null },
+      "narration": "The next run_agent call starts a new, empty list. memory.db still has the row. The system message still names the key."
+    },
+    {
+      "node": "think",
+      "author": "user",
+      "label": "User",
+      "text": "Which editor do I use?",
+      "codeLine": 31,
+      "narration": "The question is in this new list. The answer is not, unless the model calls recall with the same key."
+    },
+    {
+      "node": "act",
+      "author": "model",
+      "label": "Tool call",
+      "text": "recall {\"key\": \"editor\"}",
+      "codeLine": 14,
+      "set": { "query": "editor" },
+      "narration": "The model returns a recall tool call for the editor key, the name the system message gave it."
+    },
+    {
+      "node": "observe",
+      "author": "tool",
+      "label": "Tool result",
+      "text": "Helix",
+      "codeLine": 16,
+      "narration": "recall returns Helix, or 'no memory found for that key' if the key never matched. Append that to this run's list so the next model call can read it."
+    },
+    {
+      "node": "think",
+      "author": "model",
+      "label": "Assistant",
+      "text": "You use Helix.",
+      "codeLine": 30,
+      "narration": "The model answers from that tool result, not from the previous conversation, which this list does not contain."
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "id": "ch6",
+  "title": "Choose the next message",
+  "code": "choose",
+  "world": {
+    "scene": "files",
+    "files": [
+      { "name": "app.py", "status": "" },
+      { "name": "config.yaml", "status": "" }
+    ],
+    "term": []
+  },
+  "intro": "You play the model. You pick the next assistant message. The program still runs any tool you request and appends the result to the list.",
+  "steps": [
+    {
+      "node": "think", "author": "system", "label": "System",
+      "text": "You are a coding agent. Tools: read_file, edit_file, run_command. Read files before answering about their contents.",
+      "codeLine": 27,
+      "narration": "The system message tells the model to read files before answering. The program has already attached three tools: read_file, edit_file, and run_command."
+    },
+    {
+      "node": "think", "author": "user", "label": "User",
+      "text": "What does config.yaml set?",
+      "codeLine": 31,
+      "narration": "The user asks what config.yaml sets. The filename is in the list. The file contents are not."
+    },
+    {
+      "node": "act", "author": "model", "label": "Tool call",
+      "text": "read_file {\"path\": \"config.yaml\"}",
+      "codeLine": 7,
+      "prompt": "Pick the model's next message.",
+      "choices": [
+        { "text": "read_file {\"path\": \"config.yaml\"}", "correct": true },
+        { "text": "config.yaml sets debug: true.", "deadend": "The file contents are not in the messages, so that answer is a guess. Read the file first." },
+        { "text": "edit_file {\"path\": \"config.yaml\", \"old\": \"false\", \"new\": \"true\"}", "deadend": "That would change the file. The question asked what it sets. Read it first." }
+      ],
+      "set": { "files": [ { "name": "app.py", "status": "" }, { "name": "config.yaml", "status": "read" } ] },
+      "add": { "term": ["$ read_file config.yaml"] },
+      "narration": "You requested read_file. That is a function in this program. The program runs it. You do not read the disk yourself."
+    },
+    {
+      "node": "observe", "author": "tool", "label": "Tool result",
+      "text": "debug: false\nport: 8080",
+      "codeLine": 8,
+      "add": { "term": ["2 lines"] },
+      "narration": "read_file returns the file text. That string is appended to the list. The next message can answer from those values."
+    },
+    {
+      "node": "think", "author": "model", "label": "Assistant",
+      "text": "config.yaml sets debug: false and port: 8080.",
+      "codeLine": 30,
+      "prompt": "Pick what the model returns.",
+      "choices": [
+        { "text": "config.yaml sets debug: false and port: 8080.", "correct": true },
+        { "text": "read_file {\"path\": \"app.py\"}", "deadend": "The list already has the answer. Reading app.py would only add more tokens." }
+      ],
+      "narration": "That choice is the assistant message. It has no tool call, so the loop stops and run_agent returns this text."
+    },
+    {
+      "node": "none", "author": "system", "label": "Note",
+      "text": "You read the file, then answered from its contents.",
+      "codeLine": 16,
+      "narration": "You chose the messages. The program ran the tools in TOOLS and wrote the observations. That split is the agent."
+    }
+  ]
+}

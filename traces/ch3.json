@@ -1,0 +1,58 @@
+{
+  "id": "ch3",
+  "title": "Working memory",
+  "code": "context",
+  "world": { "scene": "meter", "used": 0, "max": 200000 },
+  "intro": "The model has no other memory. It only sees the messages you send on this call. That list is working memory, and it grows with every tool result you append.",
+  "steps": [
+    {
+      "node": "think", "author": "system", "label": "System", "tokens": 3100,
+      "text": "You are a coding agent. Tools: read_file, edit_file, run_command.",
+      "codeLine": 22,
+      "set": { "used": 3100 },
+      "narration": "Working memory starts as this messages list. The system message is about 3,100 tokens. The next call will send it again."
+    },
+    {
+      "node": "think", "author": "user", "label": "User", "tokens": 12,
+      "text": "Refactor the parser and make the tests pass.",
+      "codeLine": 25,
+      "set": { "used": 3112 },
+      "narration": "The user message is the second item. print(len(messages)) reports 2. That is the whole list so far."
+    },
+    {
+      "node": "observe", "author": "tool", "label": "Tool result", "tokens": 18400,
+      "text": "parser.py (812 lines)",
+      "codeLine": 26,
+      "set": { "used": 21512 },
+      "narration": "Your program appends the file contents as a tool result. The list is now 3. The next call sends the whole list, including this file."
+    },
+    {
+      "node": "observe", "author": "tool", "label": "Tool result", "tokens": 9600,
+      "text": "pytest: 14 failed, 2 passed",
+      "codeLine": 27,
+      "set": { "used": 31112 },
+      "narration": "Test output is appended too. The list is now 4. The model can use it only while it remains in the list."
+    },
+    {
+      "node": "observe", "author": "tool", "label": "Tool result", "tokens": 19000,
+      "text": "Updated parser.py (840 lines)",
+      "codeLine": 28,
+      "set": { "used": 50112 },
+      "narration": "Reading the file again appends a second copy. Your program decides what stays. The model cannot drop messages on its own."
+    },
+    {
+      "node": "observe", "author": "tool", "label": "Tool result", "tokens": 118000,
+      "text": "Additional file contents and test output",
+      "codeLine": 30,
+      "set": { "used": 168112 },
+      "narration": "print(len(messages)) is now 6. estimate_tokens reads 168,112. Each model has a context window: a hard limit on how many tokens it can read."
+    },
+    {
+      "node": "think", "author": "system", "label": "Summary", "tokens": 9800, "collapse": true,
+      "text": "Summary: refactoring parser.py. 11 of 14 tests pass. Remaining: CSV quoting, trailing newline, Unicode escape.",
+      "codeLine": 31,
+      "set": { "used": 9800 },
+      "narration": "The estimate is over TOKEN_LIMIT. summarize_if_needed keeps the system prompt and original task, and replaces the rest with one summary. That shorter list is now working memory."
+    }
+  ]
+}

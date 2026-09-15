@@ -1,0 +1,32 @@
+{
+  "id": "ch1",
+  "title": "One model call",
+  "code": "one_call",
+  "world": { "scene": "none" },
+  "intro": "A model call is one request to the API. You send a list of messages and receive one message back.",
+  "steps": [
+    {
+      "node": "think", "author": "system", "label": "System",
+      "text": "You are a helpful assistant.",
+      "codeLine": 5,
+      "narration": "People call this the prompt. It is a list of messages. The first item is the system message: instructions for this call."
+    },
+    {
+      "node": "think", "author": "user", "label": "User",
+      "text": "What is 2 + 2?",
+      "codeLine": 6,
+      "narration": "The second item is the user message, the question you want answered. The list now has two messages."
+    },
+    {
+      "node": "think", "author": "model", "label": "Assistant",
+      "text": "4",
+      "codeLine": 9,
+      "narration": "Your program calls OpenAI's Chat Completions API with chat.completions.create, passing the message list and the model gpt-4.1-mini. The API returns one response object that contains an assistant message. print outputs that message's text. The program does not call the model again.",
+      "note": {
+        "text": "Many models and inference providers accept this same Chat Completions request. Learn more in the",
+        "href": "https://platform.openai.com/docs/api-reference/chat/create",
+        "link": "Chat Completions API docs"
+      }
+    }
+  ]
+}

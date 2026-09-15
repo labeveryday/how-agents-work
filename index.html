@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How agents work</title>
+<meta name="description" content="Watch a model call, a tool call, and the loop that turns them into an agent.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="courseHeader">
+  <a class="brand" href="#ch=ch1&step=0" aria-label="How agents work">
+    <span class="brandGlyph" aria-hidden="true">while</span>
+    <span class="brandText">How agents work</span>
+  </a>
+  <nav class="courseMap" id="toc" aria-label="Course chapters"></nav>
+  <div class="headerActions">
+    <label class="chapterPick">
+      <span>Jump to</span>
+      <select id="chapterSelect" aria-label="Jump to a chapter"></select>
+    </label>
+    <a class="githubButton" id="githubLink" href="https://github.com/labeveryday/how-agents-work"
+       target="_blank" rel="noreferrer"
+       aria-label="Open the how-agents-work repository on GitHub"
+       title="Open the how-agents-work repository on GitHub">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.4-1.3-5.4-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2A11 11 0 0 1 12 5.7c1 0 2 .1 2.9.4 2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.4 5.7.4.4.8 1.1.8 2.2v3.4c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .7Z"/>
+      </svg>
+      <span>GitHub</span>
+    </a>
+  </div>
+</header>
+
+<main class="course" id="mainGrid">
+  <aside class="lesson" id="narrPane" aria-label="Current lesson">
+    <div class="chapterControls">
+      <button id="chPrev" class="chevBtn" aria-label="Previous chapter">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M8 1.5 L3.5 6 L8 10.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span id="chapterEyebrow">Lesson 1</span>
+      <button id="chNext" class="chevBtn" aria-label="Next chapter">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4 1.5 L8.5 6 L4 10.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <h1 id="chTitle"></h1>
+    <div class="law">
+      <span>This lesson</span>
+      <code id="lessonLaw">The model returns one message</code>
+    </div>
+    <div class="narrStack" id="narrStack"></div>
+    <div id="choiceBox" hidden></div>
+    <div class="lessonHint" id="lessonHint">Press Next to take one step.</div>
+    <div class="srOnly" aria-live="polite" id="liveText"></div>
+  </aside>
+
+  <section class="runtime" aria-label="Agent steps">
+    <div class="runtimeHeader">
+      <div>
+        <span class="runtimeStatus"><i></i> saved run</span>
+        <strong>agent.py</strong>
+      </div>
+      <div class="runtimeTools">
+        <span class="runtimeNote">No live model. Each step is saved data.</span>
+        <button type="button" class="archToggle" id="archBtn"
+          aria-expanded="false" aria-controls="archSheet"
+          aria-label="Show architecture">Diagram</button>
+      </div>
+    </div>
+
+    <div class="phaseRail" aria-label="The four steps in the agent loop">
+      <div class="phase" id="phaseRead" data-phase="read">
+        <b>1</b><span><strong>Call</strong><code>messages</code></span>
+      </div>
+      <div class="phase" id="stationModel" data-phase="think">
+        <b>2</b><span><strong>Response</strong><code>text or tool_call</code></span>
+      </div>
+      <div class="phase" id="phaseAct" data-phase="act">
+        <b>3</b><span><strong>Execute</strong><code>run the tool</code></span>
+      </div>
+      <div class="phase" id="phaseObserve" data-phase="observe">
+        <b>4</b><span><strong>Observe</strong><code>append the result</code></span>
+      </div>
+    </div>
+
+    <div class="runtimeStage">
+    <div class="runtimeGrid">
+      <section class="memoryPane" id="stationTape" data-phase="read" aria-label="Messages">
+        <div class="paneHead">
+          <div>
+            <span class="paneIndex">A</span>
+            <strong>Messages</strong>
+          </div>
+          <span class="tokens" id="tokenCount" aria-label="Estimated message size in tokens">0 tokens</span>
+        </div>
+        <div class="cardStack" id="cardStack" role="log" aria-label="Messages"></div>
+      </section>
+
+      <section class="codePane" id="stationCode" data-phase="act" aria-label="Python example">
+        <div class="paneHead codeHead">
+          <div>
+            <span class="paneIndex">B</span>
+            <strong>Your program</strong>
+          </div>
+          <span id="codeFile" class="codeFile"></span>
+        </div>
+        <p id="codeCaption" class="codeCaption"></p>
+        <pre id="codePre" aria-label="Current Python example"><code id="codeBody"></code></pre>
+      </section>
+
+      <section class="worldPane" id="stationWorld" data-phase="observe" aria-label="Program state">
+        <div class="paneHead">
+          <div>
+            <span class="paneIndex">C</span>
+            <strong>Program state</strong>
+          </div>
+        </div>
+        <div id="worldBody"></div>
+      </section>
+    </div>
+    <button type="button" class="archVeil" id="archVeil" tabindex="-1" aria-hidden="true"></button>
+    <aside class="archSheet" id="archSheet" aria-label="Architecture diagram" aria-hidden="true">
+      <div class="archHead">
+        <div>
+          <span>Architecture</span>
+          <strong id="archTitle">One model call</strong>
+        </div>
+        <button type="button" id="archClose">Close</button>
+      </div>
+      <p class="archPoint" id="archPoint"></p>
+      <div class="archFigure">
+        <div class="archOnce" id="archMapOnce" hidden>
+          <div class="onceRow">
+            <div class="archBox messages" data-arch="messages">
+              <b>messages[]</b>
+              <small>system + user</small>
+            </div>
+            <span class="onceArrow" data-arch="call" aria-hidden="true"></span>
+            <div class="archBox program" data-arch="program">
+              <b>completions.create()</b>
+              <small>your program calls this exactly once</small>
+            </div>
+            <span class="onceArrow" aria-hidden="true"></span>
+            <div class="archBox model" data-arch="model">
+              <b>response message</b>
+              <small>one message back</small>
+            </div>
+          </div>
+          <p class="onceNote">No loop. The program does not call the model again.</p>
+        </div>
+        <div class="archOnce four" id="archMapTool" hidden>
+          <div class="onceRow">
+            <div class="archBox messages" data-arch="messages">
+              <b>messages[]</b>
+              <small>system + user</small>
+            </div>
+            <span class="onceArrow" data-arch="call" aria-hidden="true"></span>
+            <div class="archBox program" data-arch="program">
+              <b>completions.create()</b>
+              <small>tools param is passed in</small>
+            </div>
+            <span class="onceArrow" aria-hidden="true"></span>
+            <div class="archBox model" data-arch="model">
+              <b>tool_calls[0]</b>
+              <small>get_weather()<br>no text reply</small>
+            </div>
+            <span class="onceArrow" data-arch="run" aria-hidden="true"></span>
+            <div class="archBox world" data-arch="world">
+              <b>your code</b>
+              <small>runs it, print(result)</small>
+            </div>
+          </div>
+          <p class="onceNote">Result is not sent back to the model yet. The program stops here.</p>
+        </div>
+        <div class="archLoop" id="archMapLoop" hidden>
+          <div class="loopChart">
+            <div class="archBox messages" data-arch="messages">
+              <b>run_agent()</b>
+              <small>builds messages[]</small>
+            </div>
+            <span class="flowDown" data-arch="call" aria-hidden="true"></span>
+            <div class="archBox program" data-arch="program">
+              <b>completions.create()</b>
+              <small>messages + tools sent each iteration</small>
+            </div>
+            <span class="flowDown" aria-hidden="true"></span>
+            <div class="archBox model" data-arch="model">
+              <b>assistant message</b>
+              <small>tool_calls?</small>
+            </div>
+            <span class="flowDown loopFork" aria-hidden="true"></span>
+            <div class="loopSplit">
+              <div class="archBox stop" data-arch="stop">
+                <b>no tool_calls</b>
+                <small>returns and exits</small>
+              </div>
+              <div class="archBox world" data-arch="run">
+                <b>has tool_calls</b>
+                <small>run each function, append tool result</small>
+              </div>
+            </div>
+            <span class="loopBack" data-arch="loop"><i>loop back</i></span>
+          </div>
+          <p class="onceNote">The run_agent tool-calling loop.</p>
+        </div>
+        <div class="archWork" id="archMapWork" hidden>
+          <div class="workChart">
+            <div class="archBox messages" data-arch="messages">
+              <b>messages[]</b>
+              <small>system, user,<br>tool, tool, tool…</small>
+            </div>
+            <span class="onceArrow" data-arch="call" aria-hidden="true"></span>
+            <div class="archBox model" data-arch="model">
+              <b>model</b>
+              <small>sees only this list,<br>nothing outside it</small>
+            </div>
+            <span class="workBack" data-arch="append"><i>append tool result</i></span>
+          </div>
+          <p class="onceNote">The list is the only memory the model has.</p>
+        </div>
+        <div class="archSaved" id="archMapSaved" hidden>
+          <div class="savedChart">
+            <div class="savedRun" data-arch="run1">
+              <span class="savedRunLabel">Run 1</span>
+              <div class="archBox messages" data-arch="messages">
+                <b>messages[]</b>
+                <small>gone when run ends</small>
+              </div>
+            </div>
+            <div class="savedRun" data-arch="run2">
+              <span class="savedRunLabel">Run 2</span>
+              <div class="archBox messages" data-arch="fresh">
+                <b>messages[]</b>
+                <small>a new, empty list</small>
+              </div>
+            </div>
+            <div class="savedLinks">
+              <span class="savedElbow out" data-arch="remember"><i>remember()</i></span>
+              <span class="savedElbow in" data-arch="recall"><i>recall()</i></span>
+            </div>
+            <div class="archBox store" data-arch="store">
+              <b>memory.db</b>
+              <small>SQLite, persists across runs</small>
+            </div>
+          </div>
+          <p class="onceNote">The file outlives the message list.</p>
+        </div>
+        <div class="archAgents" id="archMapAgents" hidden>
+          <div class="agentsChart">
+            <div class="archBox messages" data-arch="parent">
+              <b>parent run_agent()</b>
+              <small>SYSTEM: delegate, then answer</small>
+            </div>
+            <span class="flowDown" data-arch="call" aria-hidden="true"></span>
+            <div class="archBox model" data-arch="child">
+              <b>delegate(name, task)</b>
+              <small>WORKERS[name](task)</small>
+            </div>
+            <span class="agentsFork" aria-hidden="true"></span>
+            <div class="agentsKids">
+              <div class="archBox world" data-arch="researcher">
+                <b>researcher(task)</b>
+                <small>run_agent(<br>"Find facts…")[0]</small>
+              </div>
+              <div class="archBox world" data-arch="coder">
+                <b>coder(task)</b>
+                <small>run_agent(<br>"one change…")[0]</small>
+              </div>
+            </div>
+          </div>
+          <p class="onceNote">each gets no tools of its own: [], {}</p>
+        </div>
+        <div class="archOnce choose" id="archMapChoose" hidden>
+          <div class="onceRow">
+            <div class="archBox messages" data-arch="program">
+              <b>run_agent()</b>
+              <small>SYSTEM: read files<br>before answering</small>
+            </div>
+            <span class="onceArrow" data-arch="call" aria-hidden="true"></span>
+            <div class="archBox tools" data-arch="tools">
+              <b>TOOLS</b>
+              <small>read_file(path)<br>edit_file(path, old, new)<br>run_command(command)</small>
+            </div>
+            <span class="onceArrow" data-arch="run" aria-hidden="true"></span>
+            <div class="archBox model" data-arch="model">
+              <b>model picks</b>
+              <small>one tool call<br>per turn</small>
+            </div>
+          </div>
+          <p class="onceNote">still an automatic loop, no human picks the next message</p>
+        </div>
+        <div class="archMap" id="archMap">
+          <div class="archBox model" data-arch="model">
+            <span class="archKind">model</span>
+            <b id="archModelName">Model</b>
+            <small id="archModelSub">returns the next message</small>
+          </div>
+          <div class="archDown" data-arch="call">returns</div>
+          <div class="archBox program" data-arch="program">
+            <span class="archKind">your program</span>
+            <b>Your program</b>
+            <small id="archProgSub">sends the request</small>
+          </div>
+          <div class="archSplit">
+            <div class="archCol">
+              <div class="archDown" data-arch="append">append</div>
+              <div class="archBox messages" data-arch="messages">
+                <span class="archKind">pane A</span>
+                <b>Messages</b>
+                <small id="archMsgSub">the list</small>
+              </div>
+            </div>
+            <div class="archCol">
+              <div class="archDown" data-arch="run">run</div>
+              <div class="archBox world" data-arch="world">
+                <span class="archKind">pane C</span>
+                <b>World</b>
+                <small id="archWorldSub">tools and files</small>
+              </div>
+              <div class="archBox store" data-arch="store">
+                <span class="archKind">outside the list</span>
+                <b>memory.db</b>
+                <small>survives a new run</small>
+              </div>
+              <div class="archBox child" data-arch="child">
+                <span class="archKind">another loop</span>
+                <b>Child agent</b>
+                <small>own messages, own loop</small>
+              </div>
+            </div>
+          </div>
+          <div class="archReturn" data-arch="loop">
+            <span class="archReturnGo">call again with the updated list</span>
+            <span class="archReturnStop">stop. no second call</span>
+          </div>
+        </div>
+        <p class="archLegend" id="archLegend">Yellow is the current step.</p>
+      </div>
+    </aside>
+    </div>
+  </section>
+</main>
+
+<section id="closingPanel" hidden aria-label="Recap">
+  <div class="closingPage">
+    <header class="closingLead">
+      <h2>The model chooses.<br>Your program acts.</h2>
+      <p class="lede">An agent is a loop: call the model, run any tool call, append the result, call again. The model never sees files, networks, or databases. It sees the observation your program writes back into messages.</p>
+      <nav class="closingLinks" aria-label="Continue after the course">
+        <a href="https://github.com/labeveryday/how-agents-work"
+           target="_blank" rel="noreferrer">Get the code on GitHub</a>
+        <a href="https://www.youtube.com/@labeveryday"
+           target="_blank" rel="noreferrer">YouTube @labeveryday</a>
+      </nav>
+    </header>
+
+    <div class="closingFigure">
+      <p class="closingWhile"><b>while</b> True:</p>
+      <ol class="closingLoop" aria-label="The agent loop">
+        <li>
+          <b>1</b>
+          <strong>Call the model</strong>
+          <p>Pass messages, and the tool schemas, into the API.</p>
+          <code>completions.create(messages, tools)</code>
+        </li>
+        <li>
+          <b>2</b>
+          <strong>Read the response</strong>
+          <p>You get text or a tool call. The model does not run the tool.</p>
+          <code>content or tool_calls</code>
+        </li>
+        <li>
+          <b>3</b>
+          <strong>Execute</strong>
+          <p>Your code runs the function. That is the only side effect.</p>
+          <code>functions[name](**args)</code>
+        </li>
+        <li>
+          <b>4</b>
+          <strong>Observe</strong>
+          <p>Append the tool result to messages. The next call can read it. Then call the model again, or stop if there was no tool call.</p>
+          <code>messages.append(tool_result)</code>
+        </li>
+      </ol>
+      <p class="closingReturn">Append the result. Call again. Stop when the response is text.</p>
+    </div>
+
+    <div class="closingSplit">
+      <article class="roleModel">
+        <h3>The model</h3>
+        <p>Reads messages. Returns the next message. It does not open files, run commands, or write to a database.</p>
+      </article>
+      <article class="roleProgram">
+        <h3>Your program</h3>
+        <p>Executes tools. Appends each result. That append is the observation. Then it calls the model again.</p>
+      </article>
+    </div>
+
+    <div class="closingWatched">
+      <h3>What you watched</h3>
+      <ol>
+        <li><span>One model call</span> One API request. One message back. No loop.</li>
+        <li><span>One tool call</span> A tool call is data. Your code runs the function.</li>
+        <li><span>The loop</span> Call, run the tool, append the result, call again until the response is text.</li>
+        <li><span>Working memory</span> The next call only sees the current messages.</li>
+        <li><span>Saved memory</span> A file or database holds a fact after the message list is gone.</li>
+        <li><span>Multi-agent</span> A second agent is a tool. The parent list only gets the returned string.</li>
+        <li><span>You choose</span> You pick the next message. The program still runs tools and appends results.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer class="controls" id="controls">
+  <div class="progressTrack" aria-hidden="true"><div class="progressFill" id="progressFill"></div></div>
+  <div class="controlRow">
+    <div class="buttons">
+      <button id="backBtn">Back</button>
+      <button id="playBtn">Play</button>
+      <button id="nextBtn" class="primary">Next</button>
+    </div>
+    <span id="stepIndicator" class="stepInd"></span>
+    <span class="hint">Right arrow or Space takes the next step. Left arrow goes back.</span>
+    <label class="speed">Speed
+      <input id="speedSlider" type="range" min="0.5" max="2" step="0.5" value="1">
+    </label>
+  </div>
+</footer>
+
+<script src="traces/embedded.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
