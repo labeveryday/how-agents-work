@@ -8,8 +8,7 @@ This repo is an interactive walkthrough of that loop, plus the Python it is buil
 **→ [howagentswork.dev](https://howagentswork.dev)**
 
 Eight lessons, about ten minutes. Each one replays a saved run step by step, so you can watch
-the whole thing without an API key. The site also runs offline — clone the repo and open
-`index.html` in a browser.
+the whole thing without an API key.
 
 ## The lessons
 

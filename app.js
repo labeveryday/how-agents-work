@@ -1089,6 +1089,34 @@ function syncArchitecture() {
   });
 }
 
+/* The address bar never changes: every share is the same link. The reader's
+   place is kept in this browser instead. Storage throws in a private window or
+   with site data blocked, so every access is guarded and the walkthrough runs
+   fine without it. */
+const PLACE_KEY = 'how-agents-work:place';
+
+function savePlace() {
+  try {
+    window.localStorage.setItem(PLACE_KEY,
+      JSON.stringify({ ch: chapter.id, step: idx }));
+  } catch (e) { /* no storage; nothing to remember, nothing breaks */ }
+}
+
+/* Whatever comes back out is untrusted input, the same as the old URL hash was:
+   match the chapter against the known list and coerce the step to a
+   non-negative integer before either one reaches loadChapter. */
+function readPlace() {
+  let raw;
+  try { raw = window.localStorage.getItem(PLACE_KEY); } catch (e) { return null; }
+  if (!raw) return null;
+  let saved;
+  try { saved = JSON.parse(raw); } catch (e) { return null; }
+  if (!saved || typeof saved !== 'object') return null;
+  if (!CHAPTERS.some((c) => c.id === saved.ch)) return null;
+  const step = Math.floor(Number(saved.step));
+  return { ch: saved.ch, step: Number.isFinite(step) && step > 0 ? step : 0 };
+}
+
 function updateChrome() {
   const canGoBack = trail.length > 0 || !!choosing || !!prevChapterId();
   const canGoNext = canNext() || (!choosing && !tailIsDead() && !!nextChapterId());
@@ -1111,13 +1139,7 @@ function updateChrome() {
   }
   updateProgress();
   syncArchitecture();
-  if (chapter) {
-    /* Keep the bare URL bare until the reader actually moves. */
-    const atStart = chapter.id === 'ch1' && idx === 0;
-    window.history.replaceState(null, '', atStart
-      ? window.location.pathname
-      : '#ch=' + chapter.id + '&step=' + idx);
-  }
+  if (chapter) savePlace();
 }
 
 /* Progress across the whole walkthrough. */
@@ -1458,15 +1480,35 @@ async function init() {
     }
   });
 
-  /* The hash is user input. An unknown chapter would throw out of init. */
+  /* Links shared before the address bar was cleaned up still carry #ch=...;
+     honour one this once, then strip it. The hash is user input, so an unknown
+     chapter falls through rather than throwing out of init. */
   const cm = window.location.hash.match(/ch=([a-z0-9]+)/i);
   const sm = window.location.hash.match(/step=(\d+)/);
-  const wanted = cm && CHAPTERS.some((c) => c.id === cm[1]) ? cm[1] : 'ch1';
+  const fromHash = cm && CHAPTERS.some((c) => c.id === cm[1])
+    ? { ch: cm[1], step: sm ? parseInt(sm[1], 10) : 0 }
+    : null;
+  const place = fromHash || readPlace() || { ch: 'ch1', step: 0 };
+
+  if (window.location.hash) {
+    window.history.replaceState(null, '',
+      window.location.pathname + window.location.search);
+  }
+
+  /* An old link followed in an already-open tab changes the hash without
+     reloading. Strip it so the address stays bare. The reader is left where
+     they are rather than being jumped somewhere they did not ask to go. */
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash) {
+      window.history.replaceState(null, '',
+        window.location.pathname + window.location.search);
+    }
+  });
   window.addEventListener('resize', fitCode);
 
   /* Preload every trace so chapter jumps and the progress bar are instant. */
   await Promise.all(CHAPTERS.filter((c) => c.id !== 'closing').map((c) => loadTrace(c.id)));
-  await loadChapter(wanted, sm ? parseInt(sm[1], 10) : 0);
+  await loadChapter(place.ch, place.step);
 }
 
 init();
